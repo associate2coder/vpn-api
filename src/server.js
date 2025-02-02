@@ -6,9 +6,18 @@ const QRCode = require("qrcode");
 const app = express();
 const port = 3000;
 
+// Automatically detect subnet
+const detectSubnet = () => {
+  try {
+      const ip = execSync(`ip -4 addr show ${WG_INTERFACE} | grep -oP '(?<=inet\\s)\\d+\\.\\d+\\.\\d+\\.'`).toString().trim();
+      return ip || "10.0.0."; // Fallback if detection fails
+  } catch {
+      return "10.0.0."; // Default if detection fails
+  }
+};
+const BASE_IP = detectSubnet();
 const WG_CONFIG_PATH = "/etc/wireguard/wg0.conf";
 const WG_INTERFACE = "wg0";
-const BASE_IP = "10.0.0."; // Change this based on your subnet
 const SUBNET_MASK = "/24";
 const DNS_SERVER = "8.8.8.8";
 const SERVER_IP = execSync("curl -s https://api64.ipify.org")
@@ -25,6 +34,13 @@ const runCommand = (command) => execSync(command).toString().trim();
 // **1. API: Setup WireGuard Server**
 app.get("/setup-server", (req, res) => {
     try {
+      // Check if WireGuard is already running
+      try {
+        runCommand(`wg show ${WG_INTERFACE}`);
+
+        return res.json({ message: "WireGuard server is already configured and running." });
+      } catch {}
+
         // Generate server key pair
         const serverPrivateKey = runCommand("wg genkey");
         const serverPublicKey = runCommand(`echo "${serverPrivateKey}" | wg pubkey`);
@@ -59,6 +75,13 @@ app.get("/add-peer", async (req, res) => {
         const privateKey = runCommand("wg genkey");
         const publicKey = runCommand(`echo "${privateKey}" | wg pubkey`);
         const serverPublicKey = runCommand(`wg show ${WG_INTERFACE} public-key`);
+
+        // Check if the peer already exists
+        const currentPeers = runCommand(`wg show ${WG_INTERFACE} peers`);
+
+        if (currentPeers.includes(publicKey)) {
+            return res.json({ message: "Peer already exists." });
+        }        
 
         // Find next available IP
         const config = fs.readFileSync(WG_CONFIG_PATH, "utf8");
@@ -110,6 +133,13 @@ app.delete("/remove-peer", (req, res) => {
         const { publicKey } = req.body;
         if (!publicKey) {
             return res.status(400).json({ error: "Missing 'publicKey' in request body" });
+        }
+
+        // Check if the peer exists before trying to remove (MODIFIED)
+        const currentPeers = runCommand(`wg show ${WG_INTERFACE} peers`);
+
+        if (!currentPeers.includes(publicKey)) {
+            return res.json({ message: "Peer does not exist or was already removed." });
         }
 
         // Remove peer from WireGuard
