@@ -38,4 +38,4 @@ This section provides step-by-step instructions to set up your WireGuard VPN API
 Run the following command on your **Linux server** to install and configure the WireGuard API automatically:
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/associate2coder/vpn-api/main/install.sh)
