@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs-extra");
 const { execSync } = require("child_process");
 const QRCode = require("qrcode");
+const cors = require("cors");
 
 const app = express();
 const port = 3000;
@@ -27,6 +28,7 @@ const SERVER_PORT = 51820;
 
 // Middleware to parse JSON requests
 app.use(express.json());
+app.use(cors());
 
 // Function to execute shell commands
 const runCommand = (command) => execSync(command).toString().trim();
