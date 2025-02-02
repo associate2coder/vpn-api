@@ -60,8 +60,7 @@ DNS = ${DNS_SERVER}
         fs.writeFileSync(WG_CONFIG_PATH, configContent);
 
         // Enable and start WireGuard
-        runCommand(`wg-quick up ${WG_INTERFACE}`);
-        runCommand(`systemctl enable wg-quick@${WG_INTERFACE}`);
+        runCommand(`systemctl start wg-quick@${WG_INTERFACE}`);
 
         res.json({ message: "WireGuard server setup complete!" });
     } catch (error) {
