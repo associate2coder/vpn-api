@@ -26,8 +26,16 @@ const SERVER_IP = execSync("curl -s https://api64.ipify.org")
 
 const SERVER_PORT = 51820;
 
+const requestLogger = (req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`Headers: ${JSON.stringify(req.headers)}`);
+  console.log(`Body: ${JSON.stringify(req.body)}`);
+  next();
+};
+
 // Middleware to parse JSON requests
 app.use(express.json());
+app.use(requestLogger)
 app.use(cors());
 
 // Function to execute shell commands
